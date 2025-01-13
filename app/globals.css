@@ -3,19 +3,176 @@
 @tailwind utilities;
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --background-dark: #0F141E;
+  --background-body: #192332;
+  --background-light: #232630;
+  --accent-blue: #3B82F6;
+  --bright-lime: #7BC86C;
+  --bright-green: #2AA775;
+  --bright-yellow: #F9C802;
+  --bright-purple: #8E44AD;
+  --text-light: #E5E5E5;
 }
 
 body {
-  color: var(--foreground);
-  background: var(--background);
-  font-family: Arial, Helvetica, sans-serif;
+  background-color: var(--background-body);
+  color: var(--text-light);
+  font-family: 'Inter', sans-serif;
 }
+
+.gradient-background {
+  background: linear-gradient(135deg, var(--background-body) 0%, var(--background-light) 100%);
+  min-height: 100vh;
+}
+
+.gradient-text {
+  background: linear-gradient(90deg, #7BC86C 0%, #3B82F6 50%, #8E44AD 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  font-weight: 700;
+}
+
+/* Categories styling */
+.categories-container {
+  width: 100%;
+  margin: 0 auto;
+  position: relative;
+}
+
+.categories-list {
+  display: flex;
+  flex-wrap: nowrap;
+  padding: 0;
+  margin: 0 0 1rem 0;
+  background-color: transparent !important;
+  border-bottom: none;
+  width: max-content;
+}
+
+.category-tab {
+  background-color: transparent !important;
+  color: rgba(229, 229, 229, 0.7) !important;
+  border: none;
+  transition: all 0.3s ease;
+  font-size: 1rem;
+  padding: 0.5rem 1rem;
+  border-radius: 0.375rem;
+  cursor: pointer;
+}
+
+.category-tab[data-state="active"] {
+  color: var(--accent-blue) !important;
+  font-weight: 600;
+}
+
+/* Darkening effect on hover */
+.category-tab:hover,
+.footer-link:hover {
+  background-color: rgba(0, 0, 0, 0.1) !important;
+}
+
+/* Community cards grid */
+.community-card {
+  max-width: 260px;
+  width: 100%;
+}
+
+/* Responsive adjustments */
+@media (max-width: 640px) {
+  .container {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+  
+  .community-card {
+    max-width: 100%;
+  }
+}
+
+@media (min-width: 640px) {
+  .grid-cols-2 {
+    gap: 1.5rem;
+  }
+}
+
+@media (min-width: 768px) {
+  .grid-cols-3 {
+    gap: 2rem;
+  }
+  .container {
+    padding-left: max(1rem, calc((100% - 1280px) / 2));
+    padding-right: max(1rem, calc((100% - 1280px) / 2));
+  }
+}
+
+/* Container width adjustments */
+.container {
+  max-width: 1280px;
+  width: 100%;
+  margin: 0 auto;
+}
+
+/* Footer link hover effect */
+.footer-link {
+  transition: background-color 0.2s ease;
+}
+
+.footer-link:hover {
+  background-color: rgba(0, 0, 0, 0.1);
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.fade-in {
+  animation: fadeIn 0.3s ease-in;
+}
+
+/* Improved typography */
+h1, h2, h3, h4, h5, h6 {
+  letter-spacing: -0.025em;
+}
+
+p {
+  line-height: 1.6;
+}
+
+/* Improved button styles */
+.create-community-link {
+  box-shadow: 0 4px 6px rgba(59, 130, 246, 0.1);
+  transition: all 0.3s ease;
+}
+
+.create-community-link:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 8px rgba(59, 130, 246, 0.2);
+}
+
+/* Improved card styles */
+.community-card {
+  transition: all 0.3s ease;
+}
+
+.community-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 10px 15px rgba(0, 0, 0, 0.1);
+}
+
+/* Scrollbar styles for categories */
+.categories-container::-webkit-scrollbar {
+  height: 4px;
+}
+
+.categories-container::-webkit-scrollbar-track {
+  background: var(--background-dark);
+}
+
+.categories-container::-webkit-scrollbar-thumb {
+  background-color: var(--accent-blue);
+  border-radius: 2px;
+}
+
