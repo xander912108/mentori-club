@@ -13,8 +13,11 @@
     "skipLibCheck": true,
     "jsx": "preserve",
     "allowImportingTsExtensions": true,
-    "typeRoots": ["./deno-types.d.ts"]
+    "checkJs": false,
+    "paths": {
+      "@/*": ["./*"]
+    }
   },
-  "include": ["**/*.ts", "**/*.tsx", "deno-types.d.ts"],
+  "include": ["**/*.ts", "**/*.tsx", "deno.json", "deno.d.ts"],
   "exclude": ["node_modules"]
 } 

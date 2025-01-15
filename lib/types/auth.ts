@@ -1,12 +1,21 @@
-export type AuthMode = 'signin' | 'signup'
+import { User, Session, AuthError } from '@supabase/supabase-js'
 
-export interface AuthFormData {
+export type AuthMode = 'signin' | 'signup' | 'reset'
+
+export interface LoginFormData {
   email: string
   password: string
-  confirmPassword?: string
 }
 
-export interface AuthError {
-  message: string
-  field?: 'email' | 'password' | 'confirmPassword' | undefined
+export interface RegisterFormData extends LoginFormData {
+  firstName: string
+  lastName: string
+}
+
+export interface AuthResponse {
+  user: User | null
+  session: Session | null
+  error?: AuthError
+  success?: boolean
+  message?: string
 } 

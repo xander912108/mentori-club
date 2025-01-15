@@ -382,7 +382,7 @@ export default function Home() {
         <section className="text-center mb-16">
           <h1 className="text-5xl sm:text-6xl md:text-7xl font-bold mb-6 gradient-text leading-tight">
             Открой для себя<br />сообщество
-          </h1>
+        </h1>
           <p className="text-lg sm:text-xl md:text-2xl mb-12" style={{ color: 'rgba(229, 229, 229, 0.7)' }}>
             Найди свое место в мире технологий и образования
           </p>
@@ -397,8 +397,8 @@ export default function Home() {
           
           <div className="max-w-2xl mx-auto mt-16 sm:mt-20 relative">
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-accent-blue" size={24} />
-            <Input 
-              type="search"
+          <Input 
+            type="search"
               placeholder="Найти сообщество"
               className="w-full pl-14 pr-4 py-4 text-lg sm:text-xl rounded-full"
               style={{
@@ -406,8 +406,8 @@ export default function Home() {
                 borderColor: 'rgba(59, 130, 246, 0.4)',
                 color: '#E5E5E5'
               }}
-            />
-          </div>
+          />
+        </div>
         </section>
 
         <section className="mb-16">
@@ -424,23 +424,23 @@ export default function Home() {
                     {category}
                   </TabsTrigger>
                 ))}
-              </TabsList>
+          </TabsList>
             </div>
-
+          
             <TabsContent value={selectedCategory} className="mt-8">
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 justify-items-center">
                 {filteredCommunities.map((community) => (
-                  <CommunityCard
+              <CommunityCard
                     key={community.id}
                     {...community}
                   />
                 ))}
-              </div>
-            </TabsContent>
-          </Tabs>
+            </div>
+          </TabsContent>
+        </Tabs>
         </section>
       </main>
-
+      
       <Footer />
     </div>
   )

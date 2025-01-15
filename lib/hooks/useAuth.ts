@@ -2,11 +2,10 @@ import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { LoginFormData, RegisterFormData, AuthResponse } from '@/lib/types/auth';
-import type { SignInWithPasswordCredentials } from '@supabase/supabase-js';
 import { AuthError } from '@supabase/supabase-js';
 
 export const useAuth = () => {
-  const [loading, setLoading] = useState<boolean>(false);
+  const [isLoading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const supabase = createClientComponentClient();
   const router = useRouter();
@@ -24,13 +23,28 @@ export const useAuth = () => {
       if (error) throw error;
 
       router.refresh();
-      return { user: data.user, session: data.session };
-    } catch (error: any) {
-      setError(error.message);
       return { 
+        success: true,
+        user: data.user,
+        session: data.session
+      };
+    } catch (error) {
+      if (error instanceof AuthError) {
+        setError(error.message);
+        return { 
+          success: false,
+          user: null,
+          session: null,
+          error,
+          message: error.message
+        };
+      }
+      return { 
+        success: false,
         user: null,
         session: null,
-        error: new AuthError(error.message)
+        error: new AuthError('Неизвестная ошибка'),
+        message: 'Произошла неизвестная ошибка'
       };
     } finally {
       setLoading(false);
@@ -41,8 +55,6 @@ export const useAuth = () => {
     try {
       setLoading(true);
       setError(null);
-
-      console.log('Отправка запроса на регистрацию:', { email, firstName, lastName });
 
       const { data, error } = await supabase.auth.signUp({
         email,
@@ -55,12 +67,7 @@ export const useAuth = () => {
         },
       });
 
-      if (error) {
-        console.error('Ошибка при регистрации:', error);
-        throw error;
-      }
-
-      console.log('Ответ от Supabase:', data);
+      if (error) throw error;
 
       if (data?.user) {
         // Автоматически входим после регистрации
@@ -72,24 +79,42 @@ export const useAuth = () => {
         if (signInError) throw signInError;
 
         router.refresh();
-        return { user: signInData.user, session: signInData.session };
+        return { 
+          success: true,
+          user: signInData.user,
+          session: signInData.session
+        };
       }
 
-      return { user: data.user, session: data.session };
-    } catch (error: any) {
-      console.error('Ошибка в хуке useAuth:', error);
-      setError(error.message);
       return { 
+        success: true,
+        user: data.user,
+        session: data.session
+      };
+    } catch (error) {
+      if (error instanceof AuthError) {
+        setError(error.message);
+        return { 
+          success: false,
+          user: null,
+          session: null,
+          error,
+          message: error.message
+        };
+      }
+      return { 
+        success: false,
         user: null,
         session: null,
-        error: new AuthError(error.message)
+        error: new AuthError('Неизвестная ошибка'),
+        message: 'Произошла неизвестная ошибка'
       };
     } finally {
       setLoading(false);
     }
   };
 
-  const resetPassword = async (email: string): Promise<{ error?: AuthError }> => {
+  const resetPassword = async (email: string): Promise<AuthResponse> => {
     try {
       setLoading(true);
       setError(null);
@@ -100,13 +125,30 @@ export const useAuth = () => {
 
       if (error) throw error;
 
-      return {};
-    } catch (error: any) {
-      setError(error.message);
+      return {
+        success: true,
+        user: null,
+        session: null,
+        message: 'Инструкции по сбросу пароля отправлены на ваш email'
+      };
+    } catch (error) {
       if (error instanceof AuthError) {
-        return { error };
+        setError(error.message);
+        return { 
+          success: false,
+          user: null,
+          session: null,
+          error,
+          message: error.message
+        };
       }
-      return { error: new AuthError(error.message) };
+      return { 
+        success: false,
+        user: null,
+        session: null,
+        error: new AuthError('Неизвестная ошибка'),
+        message: 'Произошла неизвестная ошибка'
+      };
     } finally {
       setLoading(false);
     }
@@ -119,8 +161,10 @@ export const useAuth = () => {
       if (error) throw error;
       
       router.refresh();
-    } catch (error: any) {
-      setError(error.message);
+    } catch (error) {
+      if (error instanceof AuthError) {
+        setError(error.message);
+      }
     } finally {
       setLoading(false);
     }
@@ -131,7 +175,7 @@ export const useAuth = () => {
     signUp,
     signOut,
     resetPassword,
-    loading,
+    isLoading,
     error,
   };
 }; 

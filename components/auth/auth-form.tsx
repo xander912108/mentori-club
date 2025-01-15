@@ -1,185 +1,229 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { useRouter, useSearchParams } from 'next/navigation'
-import { createClient } from '@/lib/supabase/client'
+import { useState } from 'react'
+import { useForm } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
+import * as z from 'zod'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
-import { AuthFormData, AuthMode, AuthError } from '@/lib/types/auth'
+import { useAuth } from '@/lib/hooks/useAuth'
+import { AuthMode } from '@/lib/types/auth'
+import { Alert, AlertDescription } from '@/components/ui/alert'
+import { Loader2, X } from 'lucide-react'
 
-export function AuthForm() {
-  const router = useRouter()
-  const searchParams = useSearchParams()
-  const [mode, setMode] = useState<AuthMode>(searchParams?.get('mode') as AuthMode || 'signin')
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState<AuthError | null>(null)
-  const [formData, setFormData] = useState<AuthFormData>({
-    email: '',
-    password: '',
-    confirmPassword: '',
+interface AuthFormProps {
+  onClose?: () => void;
+}
+
+const loginSchema = z.object({
+  email: z.string().email('Введите корректный email'),
+  password: z.string().min(6, 'Минимальная длина пароля - 6 символов'),
+})
+
+const registerSchema = loginSchema.extend({
+  firstName: z.string().min(2, 'Минимальная длина имени - 2 символа'),
+  lastName: z.string().min(2, 'Минимальная длина фамилии - 2 символа'),
+})
+
+const resetSchema = z.object({
+  email: z.string().email('Please enter a valid email address'),
+})
+
+export function AuthForm({ onClose }: AuthFormProps) {
+  const [mode, setMode] = useState<AuthMode>('signin')
+  const [errorMessage, setErrorMessage] = useState<string | null>(null)
+  const { signIn, signUp, resetPassword, isLoading } = useAuth()
+
+  const form = useForm({
+    resolver: zodResolver(mode === 'signup' ? registerSchema : mode === 'reset' ? resetSchema : loginSchema),
+    defaultValues: {
+      email: '',
+      password: '',
+      firstName: '',
+      lastName: '',
+    },
   })
 
-  const supabase = createClient()
-
-  const validateForm = (): boolean => {
-    if (!formData.email) {
-      setError({ message: 'Email обязателен', field: 'email' })
-      return false
-    }
-    if (!formData.password) {
-      setError({ message: 'Пароль обязателен', field: 'password' })
-      return false
-    }
-    if (mode === 'signup') {
-      if (formData.password.length < 6) {
-        setError({ message: 'Пароль должен быть не менее 6 символов', field: 'password' })
-        return false
-      }
-      if (formData.password !== formData.confirmPassword) {
-        setError({ message: 'Пароли не совпадают', field: 'confirmPassword' })
-        return false
-      }
-    }
-    return true
-  }
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setError(null)
-    
-    if (!validateForm()) return
-
-    setLoading(true)
-
+  const onSubmit = async (data: z.infer<typeof registerSchema>) => {
+    setErrorMessage(null)
     try {
-      if (mode === 'signup') {
-        const { data, error } = await supabase.auth.signUp({
-          email: formData.email,
-          password: formData.password,
-          options: {
-            emailRedirectTo: `${window.location.origin}/auth/callback`,
-          },
-        })
-
-        if (error) throw error
-        
-        if (data.user) {
-          router.push('/auth/verify-email')
-        } else {
-          setError({ 
-            message: 'Произошла ошибка при регистрации',
-            field: undefined 
-          })
+      if (mode === 'signin') {
+        const response = await signIn({ email: data.email, password: data.password })
+        if (!response.success) {
+          setErrorMessage(response.message || 'Ошибка входа')
         }
-      } else {
-        const { error } = await supabase.auth.signInWithPassword({
-          email: formData.email,
-          password: formData.password,
-        })
-        if (error) throw error
-
-        router.push('/dashboard')
-        router.refresh()
+      } else if (mode === 'signup') {
+        const response = await signUp(data)
+        if (!response.success) {
+          setErrorMessage(response.message || 'Ошибка регистрации')
+        }
+      } else if (mode === 'reset') {
+        const response = await resetPassword(data.email)
+        if (!response.success) {
+          setErrorMessage(response.message || 'Ошибка сброса пароля')
+        }
       }
-    } catch (err: any) {
-      setError({ 
-        message: err.message || 'Произошла ошибка при аутентификации',
-        field: undefined
-      })
-    } finally {
-      setLoading(false)
+    } catch (error) {
+      setErrorMessage('Произошла ошибка при обработке запроса')
     }
-  }
-
-  const toggleMode = () => {
-    const newMode = mode === 'signin' ? 'signup' : 'signin'
-    setMode(newMode)
-    const params = new URLSearchParams(window.location.search)
-    params.set('mode', newMode)
-    setError(null)
-    router.push(`/auth?${params.toString()}`)
   }
 
   return (
-    <div className="w-full max-w-md mx-auto p-6 space-y-6">
-      <div className="text-center">
-        <h1 className="text-2xl font-bold">
-          {mode === 'signin' ? 'Вход' : 'Регистрация'}
-        </h1>
-        <p className="text-sm text-muted-foreground mt-2">
-          {mode === 'signin' 
-            ? 'Войдите в ваш аккаунт' 
-            : 'Создайте новый аккаунт'}
-        </p>
-      </div>
-
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <div className="space-y-2">
-          <Input
-            type="email"
-            placeholder="Email"
-            value={formData.email}
-            onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-            className={error?.field === 'email' ? 'border-red-500' : ''}
-          />
-          {error?.field === 'email' && (
-            <p className="text-sm text-red-500">{error.message}</p>
-          )}
-        </div>
-
-        <div className="space-y-2">
-          <Input
-            type="password"
-            placeholder="Пароль"
-            value={formData.password}
-            onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-            className={error?.field === 'password' ? 'border-red-500' : ''}
-          />
-          {error?.field === 'password' && (
-            <p className="text-sm text-red-500">{error.message}</p>
-          )}
-        </div>
-
-        {mode === 'signup' && (
-          <div className="space-y-2">
-            <Input
-              type="password"
-              placeholder="Подтвердите пароль"
-              value={formData.confirmPassword}
-              onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
-              className={error?.field === 'confirmPassword' ? 'border-red-500' : ''}
-            />
-            {error?.field === 'confirmPassword' && (
-              <p className="text-sm text-red-500">{error.message}</p>
+    <Card className="w-full max-w-md mx-auto bg-white shadow-lg relative">
+      {onClose && (
+        <button
+          onClick={onClose}
+          className="absolute right-4 top-4 text-gray-500 hover:text-gray-700"
+        >
+          <X size={20} />
+        </button>
+      )}
+      <CardHeader className="space-y-1">
+        <CardTitle className="text-2xl font-bold text-center">
+          {mode === 'signin' && 'Sign In'}
+          {mode === 'signup' && 'Create an Account'}
+          {mode === 'reset' && 'Reset Password'}
+        </CardTitle>
+        <CardDescription className="text-center">
+          {mode === 'signin' && 'Enter your email and password to sign in'}
+          {mode === 'signup' && 'Enter your details to create an account'}
+          {mode === 'reset' && 'Enter your email to reset your password'}
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            {errorMessage && (
+              <Alert variant="destructive">
+                <AlertDescription>{errorMessage}</AlertDescription>
+              </Alert>
             )}
-          </div>
-        )}
+            
+            {mode === 'signup' && (
+              <>
+                <FormField
+                  control={form.control}
+                  name="firstName"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>First Name</FormLabel>
+                      <FormControl>
+                        <Input {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="lastName"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Last Name</FormLabel>
+                      <FormControl>
+                        <Input {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </>
+            )}
+            
+            <FormField
+              control={form.control}
+              name="email"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Email</FormLabel>
+                  <FormControl>
+                    <Input type="email" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            
+            {mode !== 'reset' && (
+              <FormField
+                control={form.control}
+                name="password"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Password</FormLabel>
+                    <FormControl>
+                      <Input type="password" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            )}
 
-        {error && !error.field && (
-          <p className="text-sm text-red-500">{error.message}</p>
-        )}
+            <Button type="submit" className="w-full" disabled={isLoading}>
+              {isLoading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Please wait
+                </>
+              ) : (
+                <>
+                  {mode === 'signin' && 'Sign In'}
+                  {mode === 'signup' && 'Create Account'}
+                  {mode === 'reset' && 'Reset Password'}
+                </>
+              )}
+            </Button>
 
-        <Button 
-          type="submit" 
-          className="w-full" 
-          disabled={loading}
-        >
-          {loading ? 'Загрузка...' : mode === 'signin' ? 'Войти' : 'Зарегистрироваться'}
-        </Button>
-      </form>
-
-      <div className="text-center">
-        <Button
-          variant="link"
-          onClick={toggleMode}
-          className="text-sm"
-          disabled={loading}
-        >
-          {mode === 'signin' 
-            ? 'Нет аккаунта? Зарегистрируйтесь' 
-            : 'Уже есть аккаунт? Войдите'}
-        </Button>
-      </div>
-    </div>
+            <div className="text-center space-y-2">
+              {mode === 'signin' && (
+                <>
+                  <Button
+                    type="button"
+                    variant="link"
+                    className="text-sm"
+                    onClick={() => {
+                      setMode('reset')
+                      form.reset()
+                    }}
+                  >
+                    Forgot password?
+                  </Button>
+                  <div>
+                    <Button
+                      type="button"
+                      variant="link"
+                      className="text-sm"
+                      onClick={() => {
+                        setMode('signup')
+                        form.reset()
+                      }}
+                    >
+                      Don't have an account? Sign up
+                    </Button>
+                  </div>
+                </>
+              )}
+              
+              {(mode === 'signup' || mode === 'reset') && (
+                <Button
+                  type="button"
+                  variant="link"
+                  className="text-sm"
+                  onClick={() => {
+                    setMode('signin')
+                    form.reset()
+                  }}
+                >
+                  {mode === 'signup' ? 'Already have an account? Sign in' : 'Back to sign in'}
+                </Button>
+              )}
+            </div>
+          </form>
+        </Form>
+      </CardContent>
+    </Card>
   )
 } 
