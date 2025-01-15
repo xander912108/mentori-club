@@ -1,0 +1,20 @@
+{
+  "compilerOptions": {
+    "target": "esnext",
+    "module": "esnext",
+    "moduleResolution": "node",
+    "lib": ["esnext", "dom"],
+    "types": ["@supabase/supabase-js"],
+    "strict": true,
+    "allowJs": true,
+    "noEmit": true,
+    "isolatedModules": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "jsx": "preserve",
+    "allowImportingTsExtensions": true,
+    "typeRoots": ["./deno-types.d.ts"]
+  },
+  "include": ["**/*.ts", "**/*.tsx", "deno-types.d.ts"],
+  "exclude": ["node_modules"]
+} 
